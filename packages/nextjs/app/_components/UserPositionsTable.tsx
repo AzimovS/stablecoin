@@ -15,8 +15,8 @@ const UserPositionsTable = () => {
     receiptData: false,
   });
   const { data: ethPrice } = useScaffoldReadContract({
-    contractName: "StableCoinEngine",
-    functionName: "s_pricePoint",
+    contractName: "EthPriceOracle",
+    functionName: "price",
   });
 
   useEffect(() => {

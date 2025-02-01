@@ -22,9 +22,16 @@ const deployYourContract: DeployFunction = async function (hre: HardhatRuntimeEn
   const { deployer } = await hre.getNamedAccounts();
   const { deploy } = hre.deployments;
 
+  const ethPriceOracle = await deploy("EthPriceOracle", {
+    from: deployer,
+    args: [3333000000000000000000n],
+    log: true,
+    autoMine: true,
+  });
+
   await deploy("StableCoinEngine", {
     from: deployer,
-    args: [],
+    args: [ethPriceOracle.address],
     log: true,
     autoMine: true,
   });

@@ -5,11 +5,11 @@ import { useScaffoldReadContract, useScaffoldWriteContract } from "~~/hooks/scaf
 
 const PriceActions = () => {
   const { data: price } = useScaffoldReadContract({
-    contractName: "StableCoinEngine",
-    functionName: "s_pricePoint",
+    contractName: "EthPriceOracle",
+    functionName: "price",
   });
 
-  const { writeContractAsync } = useScaffoldWriteContract({ contractName: "StableCoinEngine" });
+  const { writeContractAsync } = useScaffoldWriteContract({ contractName: "EthPriceOracle" });
 
   const renderPrice =
     price === undefined ? <div className="ml-1 skeleton w-20 h-4"></div> : Number(formatEther(price)).toFixed(2);

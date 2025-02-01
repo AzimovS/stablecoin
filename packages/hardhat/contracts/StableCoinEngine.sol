@@ -3,6 +3,7 @@ pragma solidity ^0.8.20;
 
 import "@openzeppelin/contracts/access/Ownable.sol";
 import "./StableCoin.sol";
+import "./EthPriceOracle.sol";
 
 error Engine__InvalidAmount();
 error Engine__TransferFailed();
@@ -17,19 +18,16 @@ contract StableCoinEngine is Ownable {
     uint256 private constant LIQUIDATOR_REWARD = 10; // 10% reward for liquidators
 
     StableCoin private i_stableCoin;
-
-    // ETH/USD price with 18 decimals
-    uint256 public s_pricePoint;
+    EthPriceOracle private i_ethPriceOracle;
 
     mapping(address => uint256) public s_userCollateral; // User's collateral balance
     mapping(address => uint256) public s_userMinted; // User's minted stablecoin balance
 
     event CollateralAdded(address indexed user, uint256 indexed amount, uint256 price);
     event CollateralWithdrawn(address indexed from, address indexed to, uint256 indexed amount, uint256 price);
-    event PriceUpdated(uint256 indexed price);
 
-    constructor() Ownable(msg.sender) {
-        s_pricePoint = 3333e18; // Starting ETH price of $3333
+    constructor(address _ethPriceOracle) Ownable(msg.sender) {
+        i_ethPriceOracle = EthPriceOracle(_ethPriceOracle);
     }
 
     function setStableCoin(address stableCoinAddress) external onlyOwner {
@@ -42,7 +40,7 @@ contract StableCoinEngine is Ownable {
             revert Engine__InvalidAmount(); // Revert if no collateral is sent
         }
         s_userCollateral[msg.sender] += msg.value; // Update user's collateral balance
-        emit CollateralAdded(msg.sender, msg.value, s_pricePoint); // Emit event for collateral addition
+        emit CollateralAdded(msg.sender, msg.value, i_ethPriceOracle.price()); // Emit event for collateral addition
     }
 
     // Allows users to withdraw collateral as long as it doesn't make them liquidatable
@@ -61,7 +59,7 @@ contract StableCoinEngine is Ownable {
         // Transfer the collateral to the user
         payable(msg.sender).transfer(amount);
 
-        emit CollateralWithdrawn(msg.sender, msg.sender, amount, s_pricePoint); // Emit event for collateral withdrawal
+        emit CollateralWithdrawn(msg.sender, msg.sender, amount, i_ethPriceOracle.price()); // Emit event for collateral withdrawal
     }
 
     // Allows users to mint stablecoins based on their collateral
@@ -99,7 +97,7 @@ contract StableCoinEngine is Ownable {
     // Calculates the total collateral value for a user based on their collateral balance and price point
     function calculateCollateralValue(address user) public view returns (uint256) {
         uint256 collateralAmount = s_userCollateral[user]; // Get user's collateral amount
-        return (collateralAmount * s_pricePoint) / 1e18; // Calculate collateral value in terms of ETH price
+        return (collateralAmount * i_ethPriceOracle.price()) / 1e18; // Calculate collateral value in terms of ETH price
     }
 
     // Calculates the position ratio for a user to ensure they are within safe limits
@@ -115,12 +113,6 @@ contract StableCoinEngine is Ownable {
         if ((positionRatio * 100) < COLLATERAL_RATIO * 1e18) {
             revert Engine__UnsafePositionRatio(); // Revert if position is unsafe
         }
-    }
-
-    // Simulates an oracle function to update the ETH price; in production, use a real price feed
-    function updatePrice(uint256 newPrice) external {
-        s_pricePoint = newPrice; // Update the stored price point
-        emit PriceUpdated(newPrice);
     }
 
     // Checks if a user's position can be liquidated
@@ -169,6 +161,6 @@ contract StableCoinEngine is Ownable {
 
         s_userCollateral[user] = userCollateral - amountForLiquidator;
 
-        emit CollateralWithdrawn(user, msg.sender, amountForLiquidator, s_pricePoint); // Emit event for collateral withdrawal
+        emit CollateralWithdrawn(user, msg.sender, amountForLiquidator, i_ethPriceOracle.price()); // Emit event for collateral withdrawal
     }
 }

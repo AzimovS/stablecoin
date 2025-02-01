@@ -47,7 +47,7 @@ const CollateralGraph = () => {
   });
 
   const { data: priceEvents } = useScaffoldEventHistory({
-    contractName: "StableCoinEngine",
+    contractName: "EthPriceOracle",
     eventName: "PriceUpdated",
     fromBlock: 0n,
     watch: true,
@@ -63,25 +63,32 @@ const CollateralGraph = () => {
   ];
   const sortedEvents = combinedEvents.sort((a, b) => Number(a.blockNumber - b.blockNumber));
 
-  const ratioData = sortedEvents.reduce((acc, event, idx) => {
+  interface DataPoint {
+    name: number;
+    ratio: number;
+    collateral: bigint;
+    debt: bigint;
+  }
+
+  const ratioData = sortedEvents.reduce<DataPoint[]>((acc, event, idx) => {
     const collateralAdded = event.eventName === "CollateralAdded" ? event.args.amount : 0n;
     const collateralWithdrawn = event.eventName === "CollateralWithdrawn" ? event.args.amount : 0n;
-    const price = event.args.price || 3333000000000000000000n;
+    const price = event.eventName === "PriceUpdated" ? event.args.price : 3333000000000000000000n;
     const debtAdded = event.eventName === "Transfer" ? getDebtFromTransferEvent(event) : 0n;
 
     const prevCollateral = acc[idx - 1]?.collateral || 0n;
     const prevDebt = acc[idx - 1]?.debt || 0n;
 
-    const collateralInEth = prevCollateral + collateralAdded - collateralWithdrawn;
-    const ethPriceInStable = BigInt(Math.round(Number(formatEther(price))));
+    const collateralInEth = prevCollateral + (collateralAdded || 0n) - (collateralWithdrawn || 0n);
+    const ethPriceInStable = BigInt(Math.round(Number(formatEther(price || 0n))));
     const collateralInStable = collateralInEth * ethPriceInStable;
     const debt = prevDebt + debtAdded;
-    const ratio = Number(collateralInStable || 1) / Number(debt || collateralInStable || 1);
+    const ratio = Number(collateralInStable || 1n) / Number(debt || collateralInStable || 1n);
 
     return [
       ...acc,
       {
-        name: event.blockData?.number || 0,
+        name: Number(event.blockNumber) || 0,
         ratio: Number.isFinite(ratio) ? ratio : 1,
         collateral: collateralInEth,
         debt: debt,
