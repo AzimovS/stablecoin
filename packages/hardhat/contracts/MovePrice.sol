@@ -4,6 +4,9 @@ pragma solidity ^0.8.0;
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "./CornDEX.sol";
 
+/**
+ * @notice This contract acts as a whale account that moves the price of CORN up and down whenever anyone calls it
+ */
 contract MovePrice {
     CornDEX cornDex;
 

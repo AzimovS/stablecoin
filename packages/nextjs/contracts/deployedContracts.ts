@@ -7,13 +7,18 @@ import { GenericContractsDeclaration } from "~~/utils/scaffold-eth/contract";
 const deployedContracts = {
   31337: {
     BasicLending: {
-      address: "0xe7f1725E7734CE288F8367e1Bb143E90bb3F0512",
+      address: "0x9fE46736679d2D9a65F0992F2272dE9f3c7fa6e0",
       abi: [
         {
           inputs: [
             {
               internalType: "address",
-              name: "_ethPriceOracle",
+              name: "_cornDEX",
+              type: "address",
+            },
+            {
+              internalType: "address",
+              name: "_corn",
               type: "address",
             },
           ],
@@ -99,6 +104,56 @@ const deployedContracts = {
               type: "uint256",
             },
           ],
+          name: "AssetBorrowed",
+          type: "event",
+        },
+        {
+          anonymous: false,
+          inputs: [
+            {
+              indexed: true,
+              internalType: "address",
+              name: "user",
+              type: "address",
+            },
+            {
+              indexed: true,
+              internalType: "uint256",
+              name: "amount",
+              type: "uint256",
+            },
+            {
+              indexed: false,
+              internalType: "uint256",
+              name: "price",
+              type: "uint256",
+            },
+          ],
+          name: "AssetRepaid",
+          type: "event",
+        },
+        {
+          anonymous: false,
+          inputs: [
+            {
+              indexed: true,
+              internalType: "address",
+              name: "user",
+              type: "address",
+            },
+            {
+              indexed: true,
+              internalType: "uint256",
+              name: "amount",
+              type: "uint256",
+            },
+            {
+              indexed: false,
+              internalType: "uint256",
+              name: "price",
+              type: "uint256",
+            },
+          ],
           name: "CollateralAdded",
           type: "event",
         },
@@ -131,6 +186,37 @@ const deployedContracts = {
             },
           ],
           name: "CollateralWithdrawn",
+          type: "event",
+        },
+        {
+          anonymous: false,
+          inputs: [
+            {
+              indexed: true,
+              internalType: "address",
+              name: "user",
+              type: "address",
+            },
+            {
+              indexed: true,
+              internalType: "address",
+              name: "liquidator",
+              type: "address",
+            },
+            {
+              indexed: true,
+              internalType: "uint256",
+              name: "amount",
+              type: "uint256",
+            },
+            {
+              indexed: false,
+              internalType: "uint256",
+              name: "price",
+              type: "uint256",
+            },
+          ],
+          name: "Liquidation",
           type: "event",
         },
         {
@@ -189,6 +275,29 @@ const deployedContracts = {
             },
           ],
           stateMutability: "view",
+          type: "function",
+        },
+        {
+          inputs: [
+            {
+              internalType: "address",
+              name: "_recipient",
+              type: "address",
+            },
+            {
+              internalType: "uint256",
+              name: "_amount",
+              type: "uint256",
+            },
+            {
+              internalType: "address",
+              name: "_extraParam",
+              type: "address",
+            },
+          ],
+          name: "flashLoan",
+          outputs: [],
+          stateMutability: "nonpayable",
           type: "function",
         },
         {
@@ -298,19 +407,6 @@ const deployedContracts = {
           inputs: [
             {
               internalType: "address",
-              name: "cornAddress",
-              type: "address",
-            },
-          ],
-          name: "setCorn",
-          outputs: [],
-          stateMutability: "nonpayable",
-          type: "function",
-        },
-        {
-          inputs: [
-            {
-              internalType: "address",
               name: "newOwner",
               type: "address",
             },
@@ -341,16 +437,10 @@ const deployedContracts = {
       },
     },
     Corn: {
-      address: "0x9fE46736679d2D9a65F0992F2272dE9f3c7fa6e0",
+      address: "0x5FbDB2315678afecb367f032d93F642f64180aa3",
       abi: [
         {
-          inputs: [
-            {
-              internalType: "address",
-              name: "_owner",
-              type: "address",
-            },
-          ],
+          inputs: [],
           stateMutability: "nonpayable",
           type: "constructor",
         },
@@ -815,15 +905,15 @@ const deployedContracts = {
         transferOwnership: "@openzeppelin/contracts/access/Ownable.sol",
       },
     },
-    CornPriceOracle: {
-      address: "0x5FbDB2315678afecb367f032d93F642f64180aa3",
+    CornDEX: {
+      address: "0xe7f1725E7734CE288F8367e1Bb143E90bb3F0512",
       abi: [
         {
           inputs: [
             {
-              internalType: "uint256",
-              name: "_price",
-              type: "uint256",
+              internalType: "address",
+              name: "tokenAddr",
+              type: "address",
             },
           ],
           stateMutability: "nonpayable",
@@ -833,7 +923,69 @@ const deployedContracts = {
           anonymous: false,
           inputs: [
             {
-              indexed: true,
+              indexed: false,
+              internalType: "address",
+              name: "liquidityProvider",
+              type: "address",
+            },
+            {
+              indexed: false,
+              internalType: "uint256",
+              name: "liquidityMinted",
+              type: "uint256",
+            },
+            {
+              indexed: false,
+              internalType: "uint256",
+              name: "ethInput",
+              type: "uint256",
+            },
+            {
+              indexed: false,
+              internalType: "uint256",
+              name: "tokensInput",
+              type: "uint256",
+            },
+          ],
+          name: "LiquidityProvided",
+          type: "event",
+        },
+        {
+          anonymous: false,
+          inputs: [
+            {
+              indexed: false,
+              internalType: "address",
+              name: "liquidityRemover",
+              type: "address",
+            },
+            {
+              indexed: false,
+              internalType: "uint256",
+              name: "liquidityWithdrawn",
+              type: "uint256",
+            },
+            {
+              indexed: false,
+              internalType: "uint256",
+              name: "tokensOutput",
+              type: "uint256",
+            },
+            {
+              indexed: false,
+              internalType: "uint256",
+              name: "ethOutput",
+              type: "uint256",
+            },
+          ],
+          name: "LiquidityRemoved",
+          type: "event",
+        },
+        {
+          anonymous: false,
+          inputs: [
+            {
+              indexed: false,
               internalType: "uint256",
               name: "price",
               type: "uint256",
@@ -843,8 +995,125 @@ const deployedContracts = {
           type: "event",
         },
         {
+          anonymous: false,
+          inputs: [
+            {
+              indexed: false,
+              internalType: "address",
+              name: "swapper",
+              type: "address",
+            },
+            {
+              indexed: false,
+              internalType: "address",
+              name: "inputToken",
+              type: "address",
+            },
+            {
+              indexed: false,
+              internalType: "uint256",
+              name: "inputAmount",
+              type: "uint256",
+            },
+            {
+              indexed: false,
+              internalType: "address",
+              name: "outputToken",
+              type: "address",
+            },
+            {
+              indexed: false,
+              internalType: "uint256",
+              name: "outputAmount",
+              type: "uint256",
+            },
+          ],
+          name: "Swap",
+          type: "event",
+        },
+        {
+          inputs: [
+            {
+              internalType: "uint256",
+              name: "yOutput",
+              type: "uint256",
+            },
+            {
+              internalType: "uint256",
+              name: "xReserves",
+              type: "uint256",
+            },
+            {
+              internalType: "uint256",
+              name: "yReserves",
+              type: "uint256",
+            },
+          ],
+          name: "calculateXInput",
+          outputs: [
+            {
+              internalType: "uint256",
+              name: "xInput",
+              type: "uint256",
+            },
+          ],
+          stateMutability: "pure",
+          type: "function",
+        },
+        {
           inputs: [],
-          name: "price",
+          name: "currentPrice",
+          outputs: [
+            {
+              internalType: "uint256",
+              name: "_currentPrice",
+              type: "uint256",
+            },
+          ],
+          stateMutability: "view",
+          type: "function",
+        },
+        {
+          inputs: [],
+          name: "deposit",
+          outputs: [
+            {
+              internalType: "uint256",
+              name: "tokensDeposited",
+              type: "uint256",
+            },
+          ],
+          stateMutability: "payable",
+          type: "function",
+        },
+        {
+          inputs: [
+            {
+              internalType: "uint256",
+              name: "tokens",
+              type: "uint256",
+            },
+          ],
+          name: "init",
+          outputs: [
+            {
+              internalType: "uint256",
+              name: "",
+              type: "uint256",
+            },
+          ],
+          stateMutability: "payable",
+          type: "function",
+        },
+        {
+          inputs: [
+            {
+              internalType: "address",
+              name: "",
+              type: "address",
+            },
+          ],
+          name: "liquidity",
           outputs: [
             {
               internalType: "uint256",
@@ -859,14 +1128,189 @@ const deployedContracts = {
           inputs: [
             {
               internalType: "uint256",
-              name: "_price",
+              name: "xInput",
+              type: "uint256",
+            },
+            {
+              internalType: "uint256",
+              name: "xReserves",
+              type: "uint256",
+            },
+            {
+              internalType: "uint256",
+              name: "yReserves",
               type: "uint256",
             },
           ],
-          name: "updatePrice",
+          name: "price",
+          outputs: [
+            {
+              internalType: "uint256",
+              name: "yOutput",
+              type: "uint256",
+            },
+          ],
+          stateMutability: "pure",
+          type: "function",
+        },
+        {
+          inputs: [
+            {
+              internalType: "uint256",
+              name: "inputAmount",
+              type: "uint256",
+            },
+          ],
+          name: "swap",
+          outputs: [
+            {
+              internalType: "uint256",
+              name: "outputAmount",
+              type: "uint256",
+            },
+          ],
+          stateMutability: "payable",
+          type: "function",
+        },
+        {
+          inputs: [],
+          name: "totalLiquidity",
+          outputs: [
+            {
+              internalType: "uint256",
+              name: "",
+              type: "uint256",
+            },
+          ],
+          stateMutability: "view",
+          type: "function",
+        },
+        {
+          inputs: [
+            {
+              internalType: "uint256",
+              name: "amount",
+              type: "uint256",
+            },
+          ],
+          name: "withdraw",
+          outputs: [
+            {
+              internalType: "uint256",
+              name: "ethAmount",
+              type: "uint256",
+            },
+            {
+              internalType: "uint256",
+              name: "tokenAmount",
+              type: "uint256",
+            },
+          ],
+          stateMutability: "nonpayable",
+          type: "function",
+        },
+      ],
+      inheritedFunctions: {},
+    },
+    FlashLoanLiquidator: {
+      address: "0x8A791620dd6260079BF849Dc5567aDC3F2FdC318",
+      abi: [
+        {
+          inputs: [
+            {
+              internalType: "address",
+              name: "_lending",
+              type: "address",
+            },
+            {
+              internalType: "address",
+              name: "_cornDEX",
+              type: "address",
+            },
+            {
+              internalType: "address",
+              name: "_corn",
+              type: "address",
+            },
+          ],
+          stateMutability: "nonpayable",
+          type: "constructor",
+        },
+        {
+          inputs: [
+            {
+              internalType: "uint256",
+              name: "amount",
+              type: "uint256",
+            },
+            {
+              internalType: "address",
+              name: "initiator",
+              type: "address",
+            },
+            {
+              internalType: "address",
+              name: "toLiquidate",
+              type: "address",
+            },
+          ],
+          name: "executeOperation",
+          outputs: [
+            {
+              internalType: "bool",
+              name: "",
+              type: "bool",
+            },
+          ],
+          stateMutability: "nonpayable",
+          type: "function",
+        },
+        {
+          stateMutability: "payable",
+          type: "receive",
+        },
+      ],
+      inheritedFunctions: {},
+    },
+    MovePrice: {
+      address: "0xCf7Ed3AccA5a467e9e704C703E8D87F634fB0Fc9",
+      abi: [
+        {
+          inputs: [
+            {
+              internalType: "address",
+              name: "_cornDex",
+              type: "address",
+            },
+            {
+              internalType: "address",
+              name: "_cornToken",
+              type: "address",
+            },
+          ],
+          stateMutability: "nonpayable",
+          type: "constructor",
+        },
+        {
+          stateMutability: "payable",
+          type: "fallback",
+        },
+        {
+          inputs: [
+            {
+              internalType: "int256",
+              name: "size",
+              type: "int256",
+            },
+          ],
+          name: "movePrice",
           outputs: [],
           stateMutability: "nonpayable",
           type: "function",
+        },
+        {
+          stateMutability: "payable",
+          type: "receive",
         },
       ],
       inheritedFunctions: {},

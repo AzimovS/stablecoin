@@ -3,6 +3,9 @@ pragma solidity ^0.8.20;
 
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 
+/**
+ * @notice Simple DEX contract that allows users to swap ETH for CORN and CORN for ETH
+ */
 contract CornDEX {
     /* ========== GLOBAL VARIABLES ========== */
 
@@ -52,8 +55,7 @@ contract CornDEX {
     }
 
     /**
-     * @notice returns yOutput, or yDelta for xInput (or xDelta)
-     * @dev Follow along with the [original tutorial](https://medium.com/@austin_48503/%EF%B8%8F-minimum-viable-exchange-d84f30bd0c90) Price section for an understanding of the DEX's pricing model and for a price function to add to your contract. You may need to update the Solidity syntax (e.g. use + instead of .add, * instead of .mul, etc). Deploy when you are done.
+     * @notice returns the amount you should receive (yOutput) when given the reserves of both assets in the pool
      */
     function price(uint256 xInput, uint256 xReserves, uint256 yReserves) public pure returns (uint256 yOutput) {
         uint256 numerator = xInput * yReserves;
@@ -61,8 +63,21 @@ contract CornDEX {
         return (numerator / denominator);
     }
 
+    /**
+     * @notice returns the current price of ETH in $CORN
+     */
     function currentPrice() public view returns (uint256 _currentPrice) {
         _currentPrice = price(1 ether, address(this).balance, token.balanceOf(address(this)));
+    }
+
+        /**
+     * @notice returns the amount you need to put in (xInput) when given the amount of yOutput you want along with the reserves of both assets in the pool
+     */
+    function calculateXInput(uint256 yOutput, uint256 xReserves, uint256 yReserves) public pure returns (uint256 xInput) {
+        uint256 numerator = yOutput * xReserves;
+        uint256 denominator = yReserves - yOutput;
+    
+        return (numerator / denominator) + 1;
     }
 
     /**
@@ -95,6 +110,9 @@ contract CornDEX {
         return ethOutput;
     }
 
+    /**
+     * @notice allows users to swap ETH for $CORN or $CORN for ETH with a single method
+     */
     function swap(uint256 inputAmount) public payable returns (uint256 outputAmount) {
         if (msg.value > 0 && inputAmount == msg.value) {
             outputAmount = ethToToken();
